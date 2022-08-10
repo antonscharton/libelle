@@ -9,6 +9,7 @@ import time
 # TODO
 # backspace bug
 # recording color
+# proper zoom mapping (n to 2^n instead n to 2*n)
 
 
 # settings
