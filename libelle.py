@@ -263,7 +263,7 @@ def main():
             hovered_label = get_label_from_mouse(background_labels, pygame.mouse.get_pos())
         else:
             hovered_label = None
-        text_hovered_label = font.render('hovered class: {}'.format(hovered_label), True, (150, 150, 150))
+        text_hovered_label = font.render('hovered class: {}'.format(hovered_label + 1), True, (150, 150, 150))
 
         # events
         for event in pygame.event.get():
