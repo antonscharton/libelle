@@ -209,7 +209,7 @@ def main(zoom):
     text_headline = font.render('LIBELLE', True, (100, 100, 100))
     text_howto    = [   '\n\ngeneral keys',
                         '  [CTRL] + [S]                         save annotatin file to specified path',
-                        '  [LEFT ARROW], [RIGHT ARROW]          go one frame further / back'
+                        '  [LEFT ARROW], [RIGHT ARROW]          go one frame further / back',
                         '  [L]                                  add class before hovered class',
                         '  [L] + [CTRL] + [SHIFT] + [ALT]       delete hovered class',
                         '  [+]                                  zoom in',
