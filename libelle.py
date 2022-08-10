@@ -24,7 +24,7 @@ fps = 20
 
 # project settings
 path_imagefolder = Path(r'C:\Users\Artem\Desktop\cv\app')
-path_prjfile = Path('')
+path_prjfile = Path(' ')
 
 
 
@@ -210,6 +210,7 @@ def main(zoom):
                         'play mode',
                         '  [SPACE]                              play / pause',
                         '  [BACKSPACE]                          go to frame 0',
+                        '  [1] - [9]                            record on / off for class 1,2,...,9',
                         ' ',
                         'edit mode (when not playing)',
                         '  [LEFT MOUSE]                         paint label',
@@ -419,7 +420,7 @@ def main(zoom):
         pygame.display.update()
 
     pygame.quit()
-    data.save(path_prjfile)
+    data.save(path_save)
 
 
 if __name__ == '__main__':
