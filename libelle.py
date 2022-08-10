@@ -20,11 +20,12 @@ pixel_per_label = 25
 pixel_per_timestep = 2
 zoom = 1
 fps = 20
+autosave_time = 5    #minutes
 
 
 # project settings
-path_imagefolder = Path(r'C:\Users\Artem\Desktop\cv\app')
-path_prjfile = Path(r'C:\Users\Artem\Desktop\cv\app\app_1660118210.txt')
+path_imagefolder = Path(r'C:\Users\Artem\Desktop\cv\app') #     <- specify
+path_prjfile = Path('')
 
 
 
@@ -112,9 +113,12 @@ class Storage:
         self.n_labels = len(self.labels)
 
     def save(self, path):
-        array = np.vstack(self.labels).T
-        np.savetxt(path, array.astype('int'), fmt='%s', delimiter=' ')   # X is an array
-        print('saved to ', path)
+        if self.n_labels == 0:
+            print('nothing to save!')
+        else:
+            array = np.vstack(self.labels).T
+            np.savetxt(path, array.astype('int'), fmt='%s', delimiter=' ')   # X is an array
+            print('saved to ', path)
 
     def load(self, path):
 
@@ -160,6 +164,7 @@ def main(zoom):
     # init variables
     playing = False
     play_timer = 0
+    save_timer = 0
     i_frame = 0
     i_label = None
     hovered_label = None
@@ -174,6 +179,7 @@ def main(zoom):
     # init pygame
     pygame.init()
     clock = pygame.time.Clock()
+    clock2 = pygame.time.Clock()
     font = pygame.font.Font(os.path.join(os.path.dirname(__file__), 'cour.ttf'), 20)
 
     # screen surface
@@ -187,6 +193,7 @@ def main(zoom):
 
     # load prj data
     path_save = data.load(path_prjfile)
+    data.save(path_save)
 
 
     # create rects
@@ -201,6 +208,8 @@ def main(zoom):
     # create text
     text_headline = font.render('LIBELLE', True, (100, 100, 100))
     text_howto    = [   '\n\ngeneral keys',
+                        '  [CTRL] + [S]                         save annotatin file to specified path',
+                        '  [LEFT ARROW], [RIGHT ARROW]          go one frame further / back'
                         '  [L]                                  add class before hovered class',
                         '  [L] + [CTRL] + [SHIFT] + [ALT]       delete hovered class',
                         '  [+]                                  zoom in',
@@ -219,6 +228,12 @@ def main(zoom):
 
     # main loop
     while running:
+
+        # autosave
+        save_timer += clock2.tick()
+        if save_timer > autosave_time*60000:
+            data.save(path_save)
+            save_timer -= autosave_time*60000
 
         # player logic
         play_timer += clock.tick()
@@ -296,14 +311,25 @@ def main(zoom):
 
             if event.type == KEYDOWN:
 
+                # save
+                if event.key == pygame.K_s:
+                    mods = pygame.key.get_mods()
+                    if mods & pygame.KMOD_CTRL:
+                        data.save(path_save)
                 # tool tips
-                if event.unicode == 't':
+                elif event.unicode == 't':
                     text_on = not text_on
                 # zoom
                 elif event.unicode == "+" and zoom < 100:
                     zoom += 1
                 elif event.unicode == "-" and zoom > 1:
                     zoom -= 1
+                elif event.key == pygame.K_LEFT:
+                    playing = False
+                    pygame.mouse.set_pos(line.left - zoom*pixel_per_timestep + 1, background_labels.bottom + 8)
+                elif event.key == pygame.K_RIGHT:
+                    playing = False
+                    pygame.mouse.set_pos(line.left + zoom*pixel_per_timestep + 1, background_labels.bottom + 8)
 
                 # label
                 elif event.key == pygame.K_l:
@@ -420,7 +446,7 @@ def main(zoom):
         pygame.display.update()
 
     pygame.quit()
-    data.save(path_save)
+    #data.save(path_save)
 
 
 if __name__ == '__main__':
