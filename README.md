@@ -4,9 +4,9 @@ multi class labeling tool
 
 REQUIREMENTS:
 
-pygame
-numpy
-tqdm
+-pygame
+-numpy
+-tqdm
 
 
 USAGE:
