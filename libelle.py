@@ -9,8 +9,6 @@ import time
 # TODO
 # backspace bug
 # recording color
-# autosave
-# save button
 
 
 # settings
