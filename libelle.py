@@ -16,7 +16,6 @@ window_size = (1100, 700)
 image_height = 400
 pixel_per_label = 25
 pixel_per_timestep = 2
-zoom = 1
 fps = 20
 autosave_time = 5    #minutes
 
@@ -157,7 +156,7 @@ class Storage:
 
 
 
-def main(zoom):
+def main():
 
     # init variables
     playing = False
@@ -173,6 +172,7 @@ def main(zoom):
     text_on = True
     recording = np.zeros(10)
     recording_class = np.zeros(10)
+    zoom = 1
 
     # init pygame
     pygame.init()
@@ -449,4 +449,4 @@ def main(zoom):
 
 if __name__ == '__main__':
 
-    main(zoom)
+    main()
