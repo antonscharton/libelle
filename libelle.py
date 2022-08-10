@@ -24,7 +24,7 @@ fps = 20
 
 # project settings
 path_imagefolder = Path(r'C:\Users\Artem\Desktop\cv\app')
-path_prjfile = Path(' ')
+path_prjfile = Path(r'C:\Users\Artem\Desktop\cv\app\app_1660118210.txt')
 
 
 
