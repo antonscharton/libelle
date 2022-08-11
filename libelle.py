@@ -172,7 +172,6 @@ def main():
     moving_slider = False
     text_on = True
     recording = np.zeros(10)
-    recording_class = np.zeros(10)
     zoom = 1
 
     # init pygame
@@ -202,6 +201,8 @@ def main():
     background_buttons = pygame.Rect(background_labelnames.right, background_labels.bottom + 2, pixel_per_timestep*zoom*data.n, 30)
     background_slider = pygame.Rect(background_labelnames.right, background_buttons.bottom + 2, window_size[0] - background_labelnames.width, 15)
     foreground_slider = pygame.Rect(background_labelnames.right,  background_buttons.bottom + 4, window_size[0]- background_labelnames.width, 11)
+    recording_rects = [pygame.Rect(0,  image_height + 50 +i*pixel_per_label, 20, pixel_per_label) for i in range(10)]
+
     line = pygame.Rect(background_labelnames.right, background_labels.bottom + 2, zoom*pixel_per_timestep, 30)
 
     # create text
@@ -246,7 +247,9 @@ def main():
             playing = False
 
         # recorder
-        if playing and np.any(recording):
+        if not playing:
+            recording = np.zeros(10)
+        elif playing and np.any(recording):
             for r, rec in enumerate(recording):
                 if r < data.n_labels and rec:
                     data.labels[r][int(rec):i_frame] = 1
@@ -425,10 +428,15 @@ def main():
                 rect = pygame.Rect(background_labels[0] + pixel_per_timestep*zoom*rect_pos[0], background_labels[1] + i*pixel_per_label, pixel_per_timestep*zoom*rect_pos[1], pixel_per_label)
                 pygame.draw.rect(screen, (150, 150, 150), rect)
 
-        # drae name background
+        # draw name background
         pygame.draw.rect(screen, (20, 20, 20), background_labelnames)
         if hovered_label is not None and not playing:
             pygame.draw.rect(screen, (20, 20, 100), foreground_labelnames)
+
+        # draw recording backgrounds
+        for i in range(data.n_labels):
+            if recording[i]:
+                pygame.draw.rect(screen, (100, 20, 20), recording_rects[i])
 
         # draw label id names
         for i in range(data.n_labels):
@@ -451,7 +459,7 @@ def main():
             re0.bottom = background_labels.top - 2
             re= text_save.get_rect()
             re.right = window_size[0] - 5
-            re.bottom = re.top - 1
+            re.bottom = re0.top - 1
             screen.blit(text_save0, re0)
             screen.blit(text_save, re)
 
