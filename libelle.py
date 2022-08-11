@@ -207,7 +207,7 @@ def main():
     # create text
     text_headline = font.render('LIBELLE', True, (100, 100, 100))
     text_howto    = [   '\n\ngeneral keys',
-                        '  [CTRL] + [S]                         save annotatin file to specified path',
+                        '  [CTRL] + [S]                         save annotation file to specified path',
                         '  [LEFT ARROW], [RIGHT ARROW]          go one frame further / back',
                         '  [L]                                  add class before hovered class',
                         '  [L] + [CTRL] + [SHIFT] + [ALT]       delete hovered class',
@@ -263,7 +263,10 @@ def main():
             hovered_label = get_label_from_mouse(background_labels, pygame.mouse.get_pos())
         else:
             hovered_label = None
-        text_hovered_label = font.render('hovered class: {}'.format(hovered_label + 1), True, (150, 150, 150))
+        if hovered_label is not None:
+            text_hovered_label = font.render('hovered class: {}'.format(hovered_label + 1), True, (150, 150, 150))
+        else:
+            text_hovered_label = font.render('hovered class: {}'.format(hovered_label), True, (150, 150, 150))
 
         # events
         for event in pygame.event.get():
@@ -440,6 +443,18 @@ def main():
             screen.blit(text_imagename, (20, image_height-30))
             text_imageid = font.render('frame number: {}'.format(i_frame), True, (150, 150, 150))
             screen.blit(text_imageid, (20, image_height-50))
+
+            text_save0 = font.render(str(path_save), True, (150, 150, 150))
+            text_save = font.render('annotation will be saved to:', True, (150, 150, 150))
+            re0= text_save0.get_rect()
+            re0.right = window_size[0] - 5
+            re0.bottom = background_labels.top - 2
+            re= text_save.get_rect()
+            re.right = window_size[0] - 5
+            re.bottom = re.top - 1
+            screen.blit(text_save0, re0)
+            screen.blit(text_save, re)
+
 
         # update screen
         pygame.display.update()
