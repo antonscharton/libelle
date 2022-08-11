@@ -2,22 +2,22 @@
 multi class labeling tool
 
 
-## Requirements
+### Requirements
 
 - pygame
 - numpy
 - tqdm
 
 
-## Setup
+### Setup
 
 1) specify paths in libelle.py  ("path_imagefolder", and optionally "path_prjfile")
 2) run libelle.py
 
 
-## Keymap
+### Keymap
 ```
-[CTRL] + [S]                         save annotatin file to specified path
+[CTRL] + [S]                         save annotation file to specified path
 [LEFT ARROW]                         go one frame back
 [RIGHT ARROW]                        go one frame forward
 [L]                                  add class before hovered class
@@ -34,4 +34,6 @@ play mode
 edit mode (when not playing)
 [LEFT MOUSE]                         paint label
 [LEFT MOUSE] + [LEFT CTRL]           erase label
+[1]-[9] + [RETURN]                   paint label at current frame for class 1,2,...,9
+[1]-[9] + [DEL]                      erase label at current frame for class 1,2,...,9
 ```
