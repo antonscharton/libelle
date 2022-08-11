@@ -8,7 +8,7 @@ import time
 
 # TODO
 # backspace bug
-# recording color
+# left right pressdown behaivior
 # proper zoom mapping (exponential instead of linear)
 
 
@@ -223,7 +223,9 @@ def main():
                         ' ',
                         'edit mode (when not playing)',
                         '  [LEFT MOUSE]                         paint label',
-                        '  [LEFT MOUSE] + [LEFT CTRL]           erase label']
+                        '  [LEFT MOUSE] + [LEFT CTRL]           erase label',
+                        '  [1]-[9] + [RETURN]                   paint label at current frame for class 1,2,...,9',
+                        '  [1]-[9] + [DEL]                      erase label at current frame for class 1,2,...,9']
     print('\n'.join(text_howto))
 
     # main loop
@@ -374,6 +376,17 @@ def main():
                         else:
                             recording[num] = i_frame
 
+                # edit mode number keys behaivior
+                else:
+                    #numbers = np.array([event.unicode == str(i) for i in range(1, 10)])
+                    numbers = np.array([keys[k] for k in [K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9]])
+                    num = None
+                    if np.any(numbers):
+                        num = numbers.nonzero()[0][0]
+                    if event.key == K_DELETE and num is not None:
+                        data.labels[num][i_frame] = 0
+                    elif  event.key == K_RETURN and num is not None:
+                        data.labels[num][i_frame] = 1
 
 
 
@@ -433,10 +446,17 @@ def main():
         if hovered_label is not None and not playing:
             pygame.draw.rect(screen, (20, 20, 100), foreground_labelnames)
 
+        # draw state backgrounds
+        elif hovered_label is None and not playing:
+            for i in range(data.n_labels):
+                if data.labels[i][i_frame]:
+                    pygame.draw.rect(screen, (100, 100, 100), recording_rects[i])
+
         # draw recording backgrounds
-        for i in range(data.n_labels):
-            if recording[i]:
-                pygame.draw.rect(screen, (100, 20, 20), recording_rects[i])
+        else:
+            for i in range(data.n_labels):
+                if recording[i]:
+                    pygame.draw.rect(screen, (100, 20, 20), recording_rects[i])
 
         # draw label id names
         for i in range(data.n_labels):
