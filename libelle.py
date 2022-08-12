@@ -7,13 +7,18 @@ from tqdm import tqdm
 import time
 
 # project settings
-path_imagefolder = Path(r'C:\Users\Artem\Desktop\cv\app') #     <- specify
-path_prjfile = Path(r'')
+##############################################################################
+path_imagefolder = r'C:\Users\Artem\Desktop\cv\app'                          #     <- specify
+path_prjfile = r''
+##############################################################################
+
 
 # TODO
+# scroll with previewbar
 # backspace bug
 # left right pressdown behaivior
-# proper zoom mapping (exponential instead of linear)
+# proper zoom mapping (exponential instead of linear) and behaivior (zoom to cursor)
+
 text_howto    = [   '\n\ngeneral keys',
                     '  [CTRL] + [S]                         save annotation file to specified path',
                     '  [LEFT ARROW], [RIGHT ARROW]          go one frame further / back',
@@ -49,8 +54,6 @@ save_format = 1             # 0: raw numpy array, 1: numpy array with frame name
 # utilities
 def ltwh_from_cwh(center_x, center_y, width, height):
     return center_x -width/2, center_y - height/2, width, height
-
-
 
 def show_image(screen, image):
     rect = image.get_rect()
@@ -137,7 +140,7 @@ class Storage:
             lines = []
 
             for i, namepath in enumerate(self.image_names_and_paths):
-                lines.append(namepath[0] + ' ' + ' '.join([str(a) for a in array[i]]) + '\n')
+                lines.append(namepath[0] + ' ' + ' '.join([str(int(a)) for a in array[i]]) + '\n')
             with open(path, 'w') as f:
                 for line in lines:
                     f.write(line)
@@ -165,7 +168,7 @@ class Storage:
                 line = line.split(' ', 1)
                 names.append(line[0])
                 content.append([int(a) for a in line[1].split(' ')])
-            array = np.array(content).T
+            array = np.array(content).astype('int').T
 
             # check if image sequence and annotation length matches
             if len(array[0]) == self.n:
@@ -175,7 +178,6 @@ class Storage:
             else:
                 path = new_path
                 print("Length of Annotation does not match number of images. Creating new file for annotation!\nAnnotation will be saved to:\n\n{}".format(new_path))
-
 
         return path
 
@@ -209,12 +211,12 @@ def main():
 
     # create storage and load image files # TODO sort?
     data = Storage()
-    data.load_images(path_imagefolder)
+    data.load_images(Path(path_imagefolder))
 
 
 
     # load prj data
-    path_save = data.load(path_prjfile)
+    path_save = data.load(Path(path_prjfile))
     data.save(path_save)
 
 
