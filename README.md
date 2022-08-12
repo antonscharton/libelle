@@ -37,3 +37,18 @@ edit mode (when not playing)
 [1]-[9] + [RETURN]                   paint label at current frame for class 1,2,...,9
 [1]-[9] + [DEL]                      erase label at current frame for class 1,2,...,9
 ```
+
+### Save format
+Annotations are saved to .txt files.
+```
+...
+128357_4278566666.jpg 1 0 1
+128359_4278633333.jpg 1 0 1
+128360_4278666666.jpg 1 1 1
+128362_4278733333.jpg 1 1 1
+128364_4278800000.jpg 0 1 1
+128365_4278833333.jpg 0 1 1
+128367_4278899999.jpg 0 1 1
+128368_4278933333.jpg 0 1 1
+...
+```
