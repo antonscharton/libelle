@@ -38,8 +38,10 @@ edit mode (when not playing)
 [1]-[9] + [DEL]                      erase label at current frame for class 1,2,...,9
 ```
 
-### Save format
+### Saving format
 Annotations are saved to .txt files.
+Each row correspondes to the annotation of one frame.
+```
 ```
 ...
 128357_4278566666.jpg 1 0 1
