@@ -42,7 +42,6 @@ edit mode (when not playing)
 Annotations are saved to .txt files.
 Each row correspondes to the annotation of one frame.
 ```
-```
 ...
 128357_4278566666.jpg 1 0 1
 128359_4278633333.jpg 1 0 1
