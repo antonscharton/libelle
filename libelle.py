@@ -6,10 +6,33 @@ import numpy as np
 from tqdm import tqdm
 import time
 
+# project settings
+path_imagefolder = Path(r'C:\Users\Artem\Desktop\cv\app') #     <- specify
+path_prjfile = Path(r'')
+
 # TODO
 # backspace bug
 # left right pressdown behaivior
 # proper zoom mapping (exponential instead of linear)
+text_howto    = [   '\n\ngeneral keys',
+                    '  [CTRL] + [S]                         save annotation file to specified path',
+                    '  [LEFT ARROW], [RIGHT ARROW]          go one frame further / back',
+                    '  [L]                                  add class before hovered class',
+                    '  [L] + [CTRL] + [SHIFT] + [ALT]       delete hovered class',
+                    '  [+]                                  zoom in',
+                    '  [-]                                  zoom out',
+                    '  [T]                                  text tool tips on / off',
+                    ' ',
+                    'play mode',
+                    '  [SPACE]                              play / pause',
+                    '  [BACKSPACE]                          go to frame 0',
+                    '  [1] , [2]  ... [9]                   record on / off for class 1,2,...,9',
+                    ' ',
+                    'edit mode (when not playing)',
+                    '  [LEFT MOUSE]                         paint label',
+                    '  [LEFT MOUSE] + [LEFT CTRL]           erase label',
+                    '  [1] , [2]  ... [9] + [RETURN]        paint label at current frame for class 1,2,...,9',
+                    '  [1] , [2]  ... [9] + [DEL]           erase label at current frame for class 1,2,...,9\n']
 
 
 # settings
@@ -17,13 +40,9 @@ window_size = (1100, 700)
 image_height = 400
 pixel_per_label = 25
 pixel_per_timestep = 2
-fps = 20
-autosave_time = 5    #minutes
-
-
-# project settings
-path_imagefolder = Path(r'C:\Users\Artem\Desktop\cv\app') #     <- specify
-path_prjfile = Path('')
+fps = 20                    # when playing sequence
+autosave_time = 5           # in minutes
+save_format = 1             # 0: raw numpy array, 1: numpy array with frame names
 
 
 
@@ -115,7 +134,14 @@ class Storage:
             print('nothing to save!')
         else:
             array = np.vstack(self.labels).T
-            np.savetxt(path, array.astype('int'), fmt='%s', delimiter=' ')   # X is an array
+            lines = []
+
+            for i, namepath in enumerate(self.image_names_and_paths):
+                lines.append(namepath[0] + ' ' + ' '.join([str(a) for a in array[i]]) + '\n')
+            with open(path, 'w') as f:
+                for line in lines:
+                    f.write(line)
+            #np.savetxt(path, array.astype('int'), fmt='%s', delimiter=' ')   # X is an array
             print('saved to ', path)
 
     def load(self, path):
@@ -130,7 +156,16 @@ class Storage:
 
         # load file
         else:
-            array = np.loadtxt(path, delimiter=' ').T
+
+            with open(path,'r') as f:
+                lines = f.readlines()
+            names = []
+            content = []
+            for line in lines:
+                line = line.split(' ', 1)
+                names.append(line[0])
+                content.append([int(a) for a in line[1].split(' ')])
+            array = np.array(content).T
 
             # check if image sequence and annotation length matches
             if len(array[0]) == self.n:
@@ -143,17 +178,6 @@ class Storage:
 
 
         return path
-
-    def check(self):
-        if self.n == len(self.labels[0]):
-            print('number of images and length of annotation file matches!')
-        else:
-            print('number of images and length of annotation file DO NOT MATCH!\nCreating empty annotation file!')
-            labels = []
-            for i in range(self.n_labels):
-                labels.append(np.zeros(self.n))
-            self.labels = labels
-
 
 
 
@@ -207,25 +231,6 @@ def main():
 
     # create text
     text_headline = font.render('LIBELLE', True, (100, 100, 100))
-    text_howto    = [   '\n\ngeneral keys',
-                        '  [CTRL] + [S]                         save annotation file to specified path',
-                        '  [LEFT ARROW], [RIGHT ARROW]          go one frame further / back',
-                        '  [L]                                  add class before hovered class',
-                        '  [L] + [CTRL] + [SHIFT] + [ALT]       delete hovered class',
-                        '  [+]                                  zoom in',
-                        '  [-]                                  zoom out',
-                        '  [T]                                  text tool tips on / off',
-                        ' ',
-                        'play mode',
-                        '  [SPACE]                              play / pause',
-                        '  [BACKSPACE]                          go to frame 0',
-                        '  [1] - [9]                            record on / off for class 1,2,...,9',
-                        ' ',
-                        'edit mode (when not playing)',
-                        '  [LEFT MOUSE]                         paint label',
-                        '  [LEFT MOUSE] + [LEFT CTRL]           erase label',
-                        '  [1]-[9] + [RETURN]                   paint label at current frame for class 1,2,...,9',
-                        '  [1]-[9] + [DEL]                      erase label at current frame for class 1,2,...,9']
     print('\n'.join(text_howto))
 
     # main loop
@@ -378,7 +383,6 @@ def main():
 
                 # edit mode number keys behaivior
                 else:
-                    #numbers = np.array([event.unicode == str(i) for i in range(1, 10)])
                     numbers = np.array([keys[k] for k in [K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9]])
                     num = None
                     if np.any(numbers):
