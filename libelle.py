@@ -14,6 +14,7 @@ path_prjfile = r''
 
 
 # TODO
+# image loading on the fly
 # scroll with previewbar
 # backspace bug
 # left right pressdown behaivior
