@@ -40,7 +40,7 @@ edit mode (when not playing)
 
 ### Saving format
 Annotations are saved to .txt files.
-Each row correspondes to the annotation of one frame.
+Each row corresponds to the annotation of one frame.
 ```
 ...
 128357_4278566666.jpg 1 0 1
