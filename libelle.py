@@ -8,8 +8,8 @@ import time
 
 # project settings
 ##############################################################################
-path_imagefolder = r'C:\Users\Artem\Desktop\cv\app'                          #     <- specify
-path_prjfile = r''
+path_imagefolder = r'C:\Users\scharton\Documents\aufnahmen\test' # <- specify
+path_prjfile = r'' # <- specify optionally
 ##############################################################################
 
 
@@ -22,9 +22,10 @@ path_prjfile = r''
 
 text_howto    = [   '\n\ngeneral keys',
                     '  [CTRL] + [S]                         save annotation file to specified path',
-                    '  [LEFT ARROW], [RIGHT ARROW]          go one frame further / back',
+                    '  [LEFT ARROW]                         go backwards in time',
+                    '  [RIGHT ARROW]                        go forward in time',
                     '  [L]                                  add class before hovered class',
-                    '  [L] + [CTRL] + [SHIFT] + [ALT]       delete hovered class',
+                    '  [CTRL] + [SHIFT] + [ALT] + [L]       delete hovered class',
                     '  [+]                                  zoom in',
                     '  [-]                                  zoom out',
                     '  [T]                                  text tool tips on / off',
@@ -48,7 +49,6 @@ pixel_per_label = 25
 pixel_per_timestep = 2
 fps = 20                    # when playing sequence
 autosave_time = 5           # in minutes
-save_format = 1             # 0: raw numpy array, 1: numpy array with frame names
 
 
 
@@ -193,17 +193,19 @@ def main():
     i_frame = 0
     i_label = None
     hovered_label = None
-    label_temp = None
     running = True
     pressed = False
     moving_slider = False
+    moving_preview = False
     text_on = True
     recording = np.zeros(10)
     zoom = 1
 
     # init pygame
     pygame.init()
-    clock = pygame.time.Clock()
+    pygame.display.set_caption('ODONATA')
+    clock0 = pygame.time.Clock()
+    clock1 = pygame.time.Clock()
     clock2 = pygame.time.Clock()
     font = pygame.font.Font(os.path.join(os.path.dirname(__file__), 'cour.ttf'), 20)
 
@@ -240,13 +242,13 @@ def main():
     while running:
 
         # autosave
-        save_timer += clock2.tick()
+        save_timer += clock1.tick()
         if save_timer > autosave_time*60000:
             data.save(path_save)
             save_timer -= autosave_time*60000
 
         # player logic
-        play_timer += clock.tick()
+        play_timer += clock0.tick(fps)
         if playing and play_timer >= 1000/fps:
             play_timer -= 1000/fps
             i_frame += 1
@@ -299,10 +301,13 @@ def main():
                         data.labels[i_label][i_frame] = 1
                     elif background_buttons.collidepoint(event.pos) and background_buttons.width > window_size[0]:
                         moving_slider = True
+                    elif foreground_slider.collidepoint(event.pos) and foreground_slider.width < background_slider.width:
+                        moving_preview = True
 
                 elif event.type == MOUSEBUTTONUP:
                     pressed = False
                     moving_slider = False
+                    moving_preview = False
                 elif event.type == MOUSEMOTION:
 
                     if pressed and keys[pygame.K_LCTRL]:
@@ -323,6 +328,12 @@ def main():
                         data.labels[i_label][interval_s:interval_e] = 1
                     elif moving_slider:
                         background_labels.move_ip(event.rel[0], 0)
+                    elif moving_preview:
+                        foreground_slider.move_ip(event.rel[0], 0)
+                        fac = background_slider.width/foreground_slider.width
+                        background_labels.move_ip(- fac*event.rel[0], 0)
+                        # TODO move background_labels
+                        #background_labels.left = - foreground_slider.left*background_labels.width*(window_size[0] - background_labelnames.width) + background_labelnames.width + background_labelnames.right
 
             if event.type == KEYDOWN:
 
@@ -339,12 +350,12 @@ def main():
                     zoom += 1
                 elif event.unicode == "-" and zoom > 1:
                     zoom -= 1
-                elif event.key == pygame.K_LEFT:
-                    playing = False
-                    pygame.mouse.set_pos(line.left - zoom*pixel_per_timestep + 1, background_labels.bottom + 8)
-                elif event.key == pygame.K_RIGHT:
-                    playing = False
-                    pygame.mouse.set_pos(line.left + zoom*pixel_per_timestep + 1, background_labels.bottom + 8)
+                #elif event.key == pygame.K_LEFT:
+                #    playing = False
+                #    pygame.mouse.set_pos(line.left - zoom*pixel_per_timestep + 1, background_labels.bottom + 8)
+                #elif event.key == pygame.K_RIGHT:
+                #    playing = False
+                #    pygame.mouse.set_pos(line.left + zoom*pixel_per_timestep + 1, background_labels.bottom + 8)
 
                 # label
                 elif event.key == pygame.K_l:
@@ -384,7 +395,7 @@ def main():
                         else:
                             recording[num] = i_frame
 
-                # edit mode number keys behaivior
+                # edit mode number keys behaivior  # TODO eventuell zu non event handling verschieben
                 else:
                     numbers = np.array([keys[k] for k in [K_1, K_2, K_3, K_4, K_5, K_6, K_7, K_8, K_9]])
                     num = None
@@ -396,6 +407,17 @@ def main():
                         data.labels[num][i_frame] = 1
 
 
+        # non event input handling
+        if keys[K_LEFT]:
+            playing = False
+            pygame.mouse.set_pos(line.left - zoom*pixel_per_timestep + 1, background_labels.bottom + 8)
+        elif keys[K_RIGHT]:
+            playing = False
+            pygame.mouse.set_pos(line.left + zoom*pixel_per_timestep + 1, background_labels.bottom + 8)
+
+
+
+        ### UI ####
 
         # clean screen
         screen.fill((0, 0, 0))
@@ -405,8 +427,12 @@ def main():
 
         # update UI
         # update label background
-        if line.left >= window_size[0]:
+        if moving_preview:
+            # TODO set i frame!
+            pass
+        if line.left >= window_size[0] and not moving_preview:
             background_labels.left = background_labels.left - window_size[0]
+            
         background_labels.height = data.n_labels*pixel_per_label
         background_labels.width = pixel_per_timestep*zoom*data.n
         background_buttons.width = background_labels.width
@@ -425,7 +451,8 @@ def main():
         # update slider
         foreground_slider.top = background_slider.top + 2
         foreground_slider.width = (window_size[0] - background_labelnames.width)**2/background_labels.width
-        foreground_slider.left = background_labelnames.width + (background_labelnames.right-background_labels.left)/background_labels.width*(window_size[0] - background_labelnames.width)
+        if not moving_preview:
+            foreground_slider.left = background_labelnames.width + (background_labelnames.right-background_labels.left)/background_labels.width*(window_size[0] - background_labelnames.width)
 
         # update line
         line.top = background_buttons.top
