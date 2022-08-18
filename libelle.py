@@ -9,12 +9,13 @@ import time
 
 # project settings
 ##############################################################################
-path_imagefolder = r'C:\path\to\images' # <- specify
+path_imagefolder = r'C:\Users\Artem\Desktop\app\2022_07_29-10_44_33' # <- specify
 path_prjfile = r'' # <- specify optionally
 ##############################################################################
 
 
 # TODO
+# check sort! # TODO
 # proper zoom mapping (exponential instead of linear) and behaivior (zoom to cursor)
 # on loading, check if all annotations have one image and other way around
 
@@ -35,7 +36,7 @@ text_howto    = [   '\n\ngeneral keys',
                     ' ',
                     'edit mode (when not playing)',
                     '  [LEFT MOUSE]                         paint label',
-                    '  [LEFT MOUSE] + [LEFT CTRL]           erase label',
+                    '  [LEFT CTRL] + [LEFT MOUSE]           erase label',
                     '  [1] , [2]  ... [9] + [RETURN]        paint label at current frame for class 1,2,...,9',
                     '  [1] , [2]  ... [9] + [DEL]           erase label at current frame for class 1,2,...,9\n']
 
@@ -112,11 +113,14 @@ class Storage:
 
     def __init__(self, path):
         self.path_imagefolder = path
-        self.image_names_and_paths = [(f.name, f.path) for f in os.scandir(path) if f.is_file() and ('.jpg' in f.name or
+        image_names = [f.name for f in os.scandir(path) if f.is_file() and ('.jpg' in f.name or
                                                                                      '.JPG' in f.name or
                                                                                      '.png' in f.name or
                                                                                      '.PNG' in f.name)]
+        image_names.sort()
+        self.image_names_and_paths = [(name, os.path.join(path, name)) for name in image_names]
         self.n = len(self.image_names_and_paths)
+
         # load first image and no image
         image = pygame.image.load(self.image_names_and_paths[0][1])
         rect = image.get_rect()
