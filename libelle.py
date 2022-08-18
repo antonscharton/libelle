@@ -1,6 +1,7 @@
 import pygame
 from pygame.locals import *
 import os
+import threading
 from pathlib import Path
 import numpy as np
 from tqdm import tqdm
@@ -8,17 +9,14 @@ import time
 
 # project settings
 ##############################################################################
-path_imagefolder = r'C:\Users\scharton\Documents\aufnahmen\test' # <- specify
+path_imagefolder = r'C:\path\to\images' # <- specify
 path_prjfile = r'' # <- specify optionally
 ##############################################################################
 
 
 # TODO
-# image loading on the fly
-# scroll with previewbar
-# backspace bug
-# left right pressdown behaivior
 # proper zoom mapping (exponential instead of linear) and behaivior (zoom to cursor)
+# on loading, check if all annotations have one image and other way around
 
 text_howto    = [   '\n\ngeneral keys',
                     '  [CTRL] + [S]                         save annotation file to specified path',
@@ -47,7 +45,7 @@ window_size = (1100, 700)
 image_height = 400
 pixel_per_label = 25
 pixel_per_timestep = 2
-fps = 20                    # when playing sequence
+fps = 20                    # when playing sequence and using left / right keys
 autosave_time = 5           # in minutes
 
 
@@ -56,7 +54,12 @@ autosave_time = 5           # in minutes
 def ltwh_from_cwh(center_x, center_y, width, height):
     return center_x -width/2, center_y - height/2, width, height
 
-def show_image(screen, image):
+def show_image(screen, data, i):
+    try:
+        image = data.images[i]
+    except:
+        image = data.no_image
+
     rect = image.get_rect()
     rect.center = (window_size[0]/2, image_height/2 + 10)
     screen.blit(image, rect)
@@ -104,25 +107,43 @@ class Storage:
     n = 0
     n_labels = 0
     path_imagefolder = None
+    no_image = None
+    running = True
 
-    def load_images(self, path):
+    def __init__(self, path):
         self.path_imagefolder = path
-        image_data = [(f.name, f.path) for f in os.scandir(path) if f.is_file() and ('.jpg' in f.name or
+        self.image_names_and_paths = [(f.name, f.path) for f in os.scandir(path) if f.is_file() and ('.jpg' in f.name or
                                                                                      '.JPG' in f.name or
                                                                                      '.png' in f.name or
                                                                                      '.PNG' in f.name)]
-        images = []
-        for _, path in tqdm(image_data, desc='loading images'):
-        #for _, path in image_data:
+        self.n = len(self.image_names_and_paths)
+        # load first image and no image
+        image = pygame.image.load(self.image_names_and_paths[0][1])
+        rect = image.get_rect()
+        image = pygame.transform.scale(image, (rect[2]/rect[3]*image_height, image_height)).convert()
+        self.images.append(image)
+        no_image = pygame.image.load('no_image.png')
+        rect = no_image.get_rect()
+        self.no_image = pygame.transform.scale(no_image, (rect[2]/rect[3]*image_height, image_height)).convert()
 
-            # get width of image
-            image = pygame.image.load(path)
-            rect = image.get_rect()
-            image = pygame.transform.scale(image, (rect[2]/rect[3]*image_height, image_height)).convert()
-            images.append(image)
+    def load_images(self):
+        images = []
+        for _, path in tqdm(self.image_names_and_paths, desc='loading images'):
+        #for _, path in self.image_names_and_paths:
+
+            if self.running:
+
+                # get width of image
+                image = pygame.image.load(path)
+                rect = image.get_rect()
+                image = pygame.transform.scale(image, (rect[2]/rect[3]*image_height, image_height)).convert()
+                images.append(image)
+
+                # load into memory each 200 images
+                if len(images) % 200 == 0:
+                    self.images = images
 
         self.images = images
-        self.image_names_and_paths = image_data
         self.n = len(images)
 
     def add_label(self, i):
@@ -212,11 +233,10 @@ def main():
     # screen surface
     screen = pygame.display.set_mode(window_size)
 
-    # create storage and load image files # TODO sort?
-    data = Storage()
-    data.load_images(Path(path_imagefolder))
-
-
+    # create storage and load image files
+    data = Storage(Path(path_imagefolder))
+    thread = threading.Thread(target=data.load_images, name='load_images')
+    thread.start()
 
     # load prj data
     path_save = data.load(Path(path_prjfile))
@@ -330,10 +350,8 @@ def main():
                         background_labels.move_ip(event.rel[0], 0)
                     elif moving_preview:
                         foreground_slider.move_ip(event.rel[0], 0)
-                        fac = background_slider.width/foreground_slider.width
-                        background_labels.move_ip(- fac*event.rel[0], 0)
-                        # TODO move background_labels
-                        #background_labels.left = - foreground_slider.left*background_labels.width*(window_size[0] - background_labelnames.width) + background_labelnames.width + background_labelnames.right
+                        fac = -background_slider.width/foreground_slider.width
+                        background_labels.move_ip(fac*event.rel[0], 0)
 
             if event.type == KEYDOWN:
 
@@ -374,6 +392,8 @@ def main():
                 # stop
                 elif event.key == K_BACKSPACE:
                     i_frame = 0
+                    background_labels.left = background_labelnames.right
+                    line.left = background_buttons.left + i_frame*zoom*pixel_per_timestep
                     pygame.mouse.set_pos(background_labels.left + 1, background_labels.bottom + 8)
                     playing = False
 
@@ -422,17 +442,13 @@ def main():
         # clean screen
         screen.fill((0, 0, 0))
 
-        # show image
-        show_image(screen, data.images[i_frame])
-
         # update UI
         # update label background
         if moving_preview:
-            # TODO set i frame!
-            pass
+            i_frame = get_frame_from_mouse(background_labels, foreground_slider.center, zoom, data.n-1)
         if line.left >= window_size[0] and not moving_preview:
             background_labels.left = background_labels.left - window_size[0]
-            
+
         background_labels.height = data.n_labels*pixel_per_label
         background_labels.width = pixel_per_timestep*zoom*data.n
         background_buttons.width = background_labels.width
@@ -497,6 +513,9 @@ def main():
             text = font.render(str(i+1), True, (150, 150, 150))
             screen.blit(text, (3, background_labels.top + pixel_per_label//2 - 10 +i*pixel_per_label))
 
+        # show image
+        show_image(screen, data, i_frame)
+
         # show text
         screen.blit(text_headline, (20, 20))
         if text_on:
@@ -517,12 +536,13 @@ def main():
             screen.blit(text_save0, re0)
             screen.blit(text_save, re)
 
-
         # update screen
         pygame.display.update()
 
+    data.running = False
+    thread.join()
     pygame.quit()
-    #data.save(path_save)
+
 
 
 if __name__ == '__main__':
