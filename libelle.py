@@ -9,15 +9,14 @@ import time
 
 # project settings
 ##############################################################################
-path_imagefolder = r'C:\Users\Artem\Desktop\app\2022_07_29-10_44_33' # <- specify
+path_imagefolder = r'C:\path\to\img' # <- specify
 path_prjfile = r'' # <- specify optionally
 ##############################################################################
 
 
 # TODO
-# check sort! # TODO
 # proper zoom mapping (exponential instead of linear) and behaivior (zoom to cursor)
-# on loading, check if all annotations have one image and other way around
+# on loading, check if all annotations have one image and other way around, and if order fits saved order!
 
 text_howto    = [   '\n\ngeneral keys',
                     '  [CTRL] + [S]                         save annotation file to specified path',
@@ -48,6 +47,7 @@ pixel_per_label = 25
 pixel_per_timestep = 2
 fps = 20                    # when playing sequence and using left / right keys
 autosave_time = 5           # in minutes
+data_sort_mode = 'num_'       
 
 
 
@@ -111,13 +111,17 @@ class Storage:
     no_image = None
     running = True
 
-    def __init__(self, path):
+    def __init__(self, path, data_sort_mode = 'num_'):
         self.path_imagefolder = path
-        image_names = [f.name for f in os.scandir(path) if f.is_file() and ('.jpg' in f.name or
+        image_names = np.array([f.name for f in os.scandir(path) if f.is_file() and ('.jpg' in f.name or
                                                                                      '.JPG' in f.name or
                                                                                      '.png' in f.name or
-                                                                                     '.PNG' in f.name)]
-        image_names.sort()
+                                                                                     '.PNG' in f.name)])
+        
+        if data_sort_mode == 'num_':
+            image_ids = np.argsort([int(name.split('_')[0]) for name in image_names])
+            image_names = image_names[image_ids]
+
         self.image_names_and_paths = [(name, os.path.join(path, name)) for name in image_names]
         self.n = len(self.image_names_and_paths)
 
