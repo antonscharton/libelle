@@ -9,7 +9,7 @@ import time
 
 # project settings
 ##############################################################################
-path_imagefolder = r'C:\Users\scharton\Documents\aufnahmen\2022_07_29-09_52_20' # <- specify
+path_imagefolder = r'C:\Users\scharton\Documents\aufnahmen\2022_08_03-09_39_10' # <- specify
 path_prjfile = r'' # <- specify optionally
 ##############################################################################
 
