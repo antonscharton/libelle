@@ -6,12 +6,13 @@ from pathlib import Path
 import numpy as np
 from tqdm import tqdm
 import time
+import yaml
 
 
 # project settings
 ##############################################################################
-path_imagefolder = r'C:\Users\Artem\Desktop\in car test set\images_pose' # <- specify
-path_annotationfolder = r'C:\Users\Artem\Desktop\in car test set\annotations_pose' # <- specify
+path_imagefolder = r'C:\Users\scharton\Desktop\in car test set\images_pose' # <- specify
+path_annotationfolder = r'C:\Users\scharton\Desktop\in car test set\annotations_pose' # <- specify
 ##############################################################################
 
 # settings
@@ -21,7 +22,7 @@ autosave_time = 5           # in minutes
 
 
 class Storage:
-    labels = []
+    pose_estimations = {}
     images = []
     image_names_and_paths = []
     n = 0
@@ -71,6 +72,12 @@ class Storage:
         self.images = images
         self.n = len(images)
 
+    def save(self, path):
+        for key, value in self.pose_estimations.items():
+            filepath = os.path.join(path, key.split('.')[0] + '.yml')
+            with open(filepath, 'w') as f:
+                yaml.dump(value, f, default_flow_style=False)
+
 
 def show_image(screen, data, i):
     try:
@@ -83,7 +90,7 @@ def show_image(screen, data, i):
     screen.blit(image, rect)
     return rect
 
-def create_new_pose():
+def create_new_pose(image_rect):
     points = {'nose': (0.50, 0.10),
               'left_eye': (0.60, 0.05),
               'right_eye': (0.40, 0.05),
@@ -102,6 +109,8 @@ def create_new_pose():
               'left_ankle': (0.70, 0.95),
               'right_ankle': (0.30, 0.95)
               }
+    for key, value in points.items():
+        points[key] = (image_rect.left + value[0]*image_rect.width, image_rect.top + value[1]*image_rect.height)
     return points
 
 def coco_map_i_to_name(k):
@@ -132,39 +141,29 @@ def pose_from_list(points):
     return d
 
 
-def visualize_sceleton(surface, rect, pose):
+def visualize_sceleton(surface, pose):
     coco_skeleton = np.array([[15,13],[13, 11],[16, 14],[14, 12],[11, 12],[5, 11],[6, 12],
                         [5, 6],[5, 7],[6, 8],[7, 9],[8,10],[1,2],[0,1],[0,2],[1,3],[2,4],[3,5],[4, 6]])
     for sk in coco_skeleton:
-        p1_x, p1_y = pose[coco_map_i_to_name(sk[0])]
-        p2_x, p2_y = pose[coco_map_i_to_name(sk[1])]
-        p1_x = rect.left + rect.width*p1_x
-        p1_y = rect.top + rect.height*p1_y
-        p2_x = rect.left + rect.width*p2_x
-        p2_y = rect.top + rect.height*p2_y
-        pygame.draw.line(surface, (0, 0, 0), (p1_x, p1_y), (p2_x, p2_y), width=5)
+        pygame.draw.line(surface, (0, 0, 0), pose[coco_map_i_to_name(sk[0])], pose[coco_map_i_to_name(sk[1])], width=5)
 
     rects = []
     for key, point in pose.items():
-        x = rect.left + point[0]*rect.width
-        y = rect.top + point[1]*rect.height
-        r = pygame.draw.circle(surface, (0, 0, 0), (x, y), 10, 0)
+        r = pygame.draw.circle(surface, (0, 0, 0), point, 10, 0)
         rects.append(r)
     return rects
 
-def rects_to_pose(image_rect, point_rects):
-    points = []
-    for rect in point_rects:
-        points.append(((rect.center[0] - image_rect.left)/image_rect.width,
-                       (rect.center[1] - image_rect.top)/image_rect.height))
-    return pose_from_list(points)
+def insert_rect_in_pose(pose, rect, i):
+    key = coco_map_i_to_name(i)
+    pose[key] = (rect.center[0], rect.center[1])
+    return pose
 
 def main():
 
     running = True
     i_frame = 0
+    dragging_rect = None
     dragging = False
-
 
     # init pygame
     pygame.init()
@@ -192,12 +191,11 @@ def main():
 
         # create new pose if not done yet
         name = data.image_names_and_paths[i_frame][0]
-        if name not in pose_estimations:
-            pose_estimations[name] = create_new_pose()
+        if name not in data.pose_estimations:
+            data.pose_estimations[name] = create_new_pose(rect)
 
-        print(pose_estimations[name])
         # show pose
-        point_rects = visualize_sceleton(screen, rect, pose_estimations[name])
+        point_rects = visualize_sceleton(screen, data.pose_estimations[name])
 
 
         # events
@@ -212,25 +210,24 @@ def main():
                     i_frame += 1
 
             if event.type == MOUSEBUTTONDOWN and event.button == 1:
-                for rect in point_rects:
+                for r, rect in enumerate(point_rects):
                     if rect.collidepoint(event.pos):
                         print('dragging ', rect)
-                        dragging = rect
+                        dragging_rect = rect
+                        dragging = r
                         break
             elif event.type == MOUSEBUTTONUP:
                 print('dragging stopped ', dragging)
-                dragging = False
-            elif event.type == MOUSEMOTION and dragging:
-                dragging.move_ip(event.rel)
-
-
-        # save pose
-        pose_estimations[name] = rects_to_pose(rect, point_rects)
+                dragging_rect = None
+            elif event.type == MOUSEMOTION and dragging_rect is not None:
+                dragging_rect.move_ip(event.rel)
+                data.pose_estimations[name] = insert_rect_in_pose(data.pose_estimations[name], dragging_rect, dragging)
 
 
         # update screen
         pygame.display.update()
 
+    data.save(path_annotationfolder)
     # quit
     pygame.quit()
 
