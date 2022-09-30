@@ -9,8 +9,9 @@ import time
 
 # project settings
 ##############################################################################
-path_imagefolder = r'C:\Users\scharton\Documents\aufnahmen\2022_08_03-09_39_10' # <- specify
-path_prjfile = r'' # <- specify optionally
+path_imagefolder = r'D:\IIP\2022_09_28-14_28_39' # <- specify
+path_prjfile = r'C:\Users\scharton\Documents\aufnahmen\2022_09_16-13_32_21\2022_09_16-13_32_21.txt' # <- specify optionally
+path_prjfile = '' # <- specify optionally
 ##############################################################################
 
 
@@ -64,7 +65,7 @@ def show_image(screen, data, i):
     rect = image.get_rect()
     rect.center = (window_size[0]/2, image_height/2 + 10)
     screen.blit(image, rect)
-    
+
 
 def get_loc_from_glob(rect, global_pos):
     return (global_pos[0] - rect[0], global_pos[1] - rect[1])
@@ -129,7 +130,7 @@ class Storage:
         image = pygame.transform.scale(image, (rect[2]/rect[3]*image_height, image_height)).convert()
         self.images.append(image)
 
-        no_image = pygame.image.load(os.path.join(Path().resolve(), 'no_image.png'))
+        no_image = pygame.image.load(os.path.join(Path(__file__).parent.resolve(), 'no_image.png'))
         rect = no_image.get_rect()
         self.no_image = pygame.transform.scale(no_image, (rect[2]/rect[3]*image_height, image_height)).convert()
 
@@ -235,7 +236,7 @@ def main():
     clock0 = pygame.time.Clock()
     clock1 = pygame.time.Clock()
     clock2 = pygame.time.Clock()
-    font = pygame.font.Font(os.path.join(Path().resolve(), 'cour.ttf'), 20)
+    font = pygame.font.Font(os.path.join(Path(__file__).parent.resolve(), 'cour.ttf'), 20)
 
     # screen surface
     screen = pygame.display.set_mode(window_size)
